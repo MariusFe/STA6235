@@ -1,0 +1,111 @@
+---
+title: "Quiz 9 (in class)"
+author: "Your Name Here"
+date: '2022-03-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(gsheet)
+
+data <- as_tibble(gsheet2tbl("https://docs.google.com/spreadsheets/d/1P5HkpCMmagYQUp0utPMPQBJi1i9nxYVNUyx0mgaHFzc/edit?usp=sharing"))
+
+Y <- data$Sell
+
+X1 <- data$Difficulty_num
+```
+
+## Create the design matrix
+
+```{r}
+ones <- c(rep(1, length(X1)))
+X <- cbind(ones, X1)
+head(X)
+```
+
+## Find the estimates for $\beta_0$ and $\beta_1$
+
+```{r}
+Y <- as_vector(Y)
+b <- solve(t(X)%*%X) %*% t(X)%*%Y
+b
+```
+
+## Determine if $X$ is a significant predictor of $Y$ (construct the test statistic using the matrix approach)
+
+### Using *F* test
+
+```{r}
+H = X%*%solve(t(X) %*% X)%*%t(X)
+J <- matrix(1, nrow(X), nrow(X))
+I <- diag(nrow(X))
+SSR <- t(Y) %*% (H - (1/nrow(X)) * J) %*% Y
+SSE <- t(Y) %*% (I - H) %*% Y
+SST <- SSR + SSE
+MSR <- SSR/(ncol(X)-1)
+MSE <- SSE*(1/(nrow(X)-(ncol(X)-1)-1))
+F <- MSR / MSE
+p <- pf(F, ncol(X)-1, nrow(X)-2, lower.tail = FALSE)
+```
+
+**Hypotheses**
+
+&emsp;&emsp; $H_0: \ \beta_1 = 0$ <br>
+&emsp;&emsp; $H_1: \ \beta_1 \ne 0$
+
+**Test Statistic**
+
+&emsp;&emsp; $F = `r round(F, digits=2)`$.
+
+***p*-value**
+
+&emsp;&emsp; $p = `r p`$.
+
+**Rejection Region**
+
+&emsp;&emsp; Reject if $p < \alpha$, where $\alpha=0.05$.
+
+**Conclusion and Interpretation**
+
+&emsp;&emsp; Reject $H_0$. There is sufficient evidence to suggest that the slope is non-zero.
+
+
+### Using *t* test
+
+```{r}
+# using t test
+s2_b <- as.numeric(MSE) * solve(t(X) %*% X) 
+se <- c(sqrt(s2_b[1,1]), sqrt(s2_b[2,2]))
+t <- b / se
+p <- 2*pt(-(abs(t[2])), nrow(X)-(ncol(X)-1)-1, lower.tail = TRUE)
+```
+
+**Hypotheses**
+
+&emsp;&emsp; $H_0: \ \beta_1 = 0$ <br>
+&emsp;&emsp; $H_1: \ \beta_1 \ne 0$
+
+**Test Statistic**
+
+&emsp;&emsp; $t = `r round(t[2], digits=2)`$.
+
+***p*-value**
+
+&emsp;&emsp; $p = `r p`$.
+
+**Rejection Region**
+
+&emsp;&emsp; Reject if $p < \alpha$, where $\alpha=0.05$.
+
+**Conclusion and Interpretation**
+
+&emsp;&emsp; Reject $H_0$. There is sufficient evidence to suggest that the slope is non-zero.
+
+### Comparing to lm() function
+
+```{r}
+summary(lm(Sell ~ Difficulty_num, data = data))
+```
