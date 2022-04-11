@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(gsheet)
 library(tidyverse)
+library(fastDummies)
 
 data <- as_tibble(gsheet2tbl("https://docs.google.com/spreadsheets/d/1QH5XDEUEmBGp2ZzO7OQS0T1vSELIjFAi2gTmnqokoMg/edit#gid=0"))
 
